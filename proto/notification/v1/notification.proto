@@ -1,0 +1,60 @@
+syntax = "proto3";
+
+package notification.v1;
+
+option java_multiple_files = true;
+option java_package = "dev.soham.lannotify.proto";
+option java_outer_classname = "NotificationProtocol";
+
+service NotificationService {
+  rpc RegisterDevice(RegisterDeviceRequest) returns (RegisterDeviceResponse);
+  rpc Subscribe(SubscribeRequest) returns (stream NotificationMessage);
+  rpc Acknowledge(AcknowledgeRequest) returns (AcknowledgeResponse);
+  rpc SendNotification(SendNotificationRequest) returns (SendNotificationResponse);
+}
+
+message RegisterDeviceRequest {
+  string device_name = 1;
+}
+
+message RegisterDeviceResponse {
+  string device_id = 1;
+  string device_token = 2;
+}
+
+message SubscribeRequest {
+  string device_id = 1;
+  string device_token = 2;
+}
+
+message NotificationMessage {
+  string message_id = 1;
+  string device_id = 2;
+  string title = 3;
+  string body = 4;
+  map<string, string> data = 5;
+  int64 created_unix_ms = 6;
+}
+
+message AcknowledgeRequest {
+  string device_id = 1;
+  string device_token = 2;
+  string message_id = 3;
+}
+
+message AcknowledgeResponse {
+  bool accepted = 1;
+}
+
+message SendNotificationRequest {
+  string admin_token = 1;
+  string device_id = 2;
+  string title = 3;
+  string body = 4;
+  map<string, string> data = 5;
+}
+
+message SendNotificationResponse {
+  string message_id = 1;
+  bool accepted = 2;
+}
