@@ -1,158 +1,178 @@
 # LanNotify
 
-**A LAN-only notification server built for educational purposes.**
+**LanNotify** is a LAN-based notification system that lets a C++ server send notifications to registered Android devices over gRPC.
 
-LanNotify is a learning project that demonstrates how to build a notification system using **C++, gRPC, and Android**. It consists of a C++ server that runs on a local network and an Android client that connects to the server to receive notifications.
-
-The project explores client-server communication, gRPC streaming, Android foreground services, and real-time notification delivery over a local network.
-
-> **Note:** LanNotify is an educational prototype intended for use on a trusted local area network (LAN). It is not designed or hardened for production use.
+The project is built as a learning project to explore gRPC, Protocol Buffers, C++, Kotlin, and Android notification delivery.
 
 ## Features
 
-- **LAN-based communication:** Communicate between the server and Android device over the same local network.
-- **gRPC:** Use gRPC and Protocol Buffers for communication between the C++ server and Android client.
-- **Server-streaming RPC:** Maintain a subscription through which the server can send notifications to connected Android clients.
-- **Terminal notification sender:** Send notifications from a command-line application.
-- **Android notifications:** Display incoming messages using Android's notification system.
-- **Connection management:** Track active client subscriptions and queue notifications in memory.
-- **Automatic reconnection:** The Android connection service attempts to reconnect when the stream disconnects.
+- **C++ gRPC server** for device registration and notification delivery.
+- **Interactive server shell** for managing registered devices and sending notifications.
+- **Kotlin Android client** that receives notifications through a gRPC streaming connection.
+- **Protocol Buffers** for communication between the server and clients.
+- **LAN communication** without relying on Firebase Cloud Messaging (FCM).
+- **CMake and FetchContent** for managing the C++ build and dependencies.
+
+## Architecture
+
+```text
+                  Local Area Network
+                          |
+             +------------+------------+
+             |                         |
+       +-----v------+           +------v------+
+       | LanNotify  |           |   Android   |
+       |   Server   |<----------|    Client   |
+       |   (C++)    |   gRPC    |   (Kotlin)  |
+       +------------+           +-------------+
+             |
+       Interactive Shell
+             |
+       +-----+------+
+       |            |
+    devices        send
+```
+
+The server exposes a gRPC service, registers Android devices, and maintains active notification connections in memory. The interactive shell allows the operator to inspect registered devices and send notifications directly from the server terminal.
 
 ## Tech Stack
 
 | Component | Technology |
 |---|---|
 | Server | C++ |
-| Build system | CMake |
 | RPC framework | gRPC |
-| Serialization | Protocol Buffers |
+| Interface definition | Protocol Buffers |
+| Build system | CMake |
+| Dependency management | FetchContent |
 | Android client | Kotlin |
-| Android communication | gRPC |
-| Android development | Android Studio |
-| C++ development | CLion |
-| Current storage | In-memory |
-
-## Architecture
-
-```text
-                Local Area Network (LAN)
-        ┌─────────────────────────────────┐
-        │                                 │
-        │  ┌───────────────────────────┐  │
-        │  │     C++ gRPC Server       │  │
-        │  │          CLion             │  │
-        │  │                           │  │
-        │  │  NotificationService      │  │
-        │  │  ConnectionManager        │  │
-        │  └─────────────┬─────────────┘  │
-        │                │                │
-        │          gRPC / HTTP/2          │
-        │                │                │
-        │  ┌─────────────▼─────────────┐  │
-        │  │      Android Client      │  │
-        │  │      Android Studio      │  │
-        │  │                           │  │
-        │  │  Connection Service      │  │
-        │  │  Notification Handler   │  │
-        │  └───────────────────────────┘  │
-        │                                 │
-        └─────────────────────────────────┘
-```
-
-The Android client connects to the server and subscribes to its notification stream. The terminal sender uses a separate gRPC client to submit notification requests to the server, which forwards them to an active device subscription.
+| Android notifications | Android Notification APIs |
+| IDEs | CLion and Android Studio |
 
 ## Project Structure
 
-The project contains the following logical components:
-
-- **Server:** C++ gRPC service, connection management, and server entry point.
-- **Sender:** C++ command-line application for sending notifications.
-- **Android:** Kotlin application that registers a device, subscribes to notifications, and displays them.
-- **Proto:** Shared Protocol Buffers definitions used to generate the gRPC interfaces for both platforms.
-
-## Getting Started
-
-### Prerequisites
-
-- [CLion](https://www.jetbrains.com/clion/) for the C++ server and sender.
-- [Android Studio](https://developer.android.com/studio) for the Android application.
-- A C++ compiler and CMake.
-- Git for fetching dependencies.
-- An Android device or emulator.
-- A local network that allows communication between the server and Android device.
-
-### 1. Run the C++ server
-
-1. Open the server project in CLion.
-2. Configure the CMake project and fetch its dependencies.
-3. Build the `LanNotifyServer` target.
-4. Run the server.
-
-The server listens on the configured address and port. For example:
-
 ```text
-0.0.0.0:50051
+LanNotify/
+├── android/                 # Android client
+├── server/
+│   ├── CMakeLists.txt
+│   ├── grpc/                # gRPC dependency setup
+│   └── src/
+│       ├── main.cpp
+│       ├── NotificationServiceImpl.h
+│       └── NotificationServiceImpl.cpp
+├── proto/                   # Protocol Buffer definitions
+├── .gitignore
+└── README.md
 ```
 
-Ensure that the operating system firewall allows inbound connections on the chosen port from your trusted local network.
+*The structure above is representative; adjust the paths to match your actual source tree.*
 
-### 2. Run the Android client
+## Prerequisites
 
-1. Open the Android project in Android Studio.
-2. Allow Gradle to synchronize and resolve dependencies.
-3. Build and run the application on an Android device.
-4. Configure the server's LAN IP address and port.
-5. Register the device and establish the notification subscription.
+- A C++ compiler with C++20 or later support.
+- CMake.
+- Git.
+- An internet connection for the initial FetchContent dependency download.
+- CLion for the C++ server.
+- Android Studio and the Android SDK for the Android client.
 
-For example, if the server's LAN address is `192.168.1.5` and its port is `50051`, configure the Android client to connect to that address.
+## Running the Server
 
-**Important:** The example IP is specific to a local network configuration. Your server's actual address may differ.
+1. Open the project in CLion.
+2. Configure the CMake project and allow dependencies to download.
+3. Build the server target.
+4. Run the server executable.
 
-### 3. Send a notification from the terminal
+The server listens on the configured address:
 
-Build and run the `LanNotifySender` target from CLion or your build directory. The sender prompts for the server address, port, device ID, notification title, and message body.
+```text
+192.168.1.5:50051
+```
 
-Once the Android client is connected, the server can forward the notification through the active gRPC stream.
+Change the `server_address` value in `main.cpp` to match the host computer's LAN IPv4 address.
 
-## How It Works
+For Android devices on the same network to connect, allow inbound TCP traffic on port `50051` in the host computer's firewall.
 
-1. The Android client registers with the server and receives device credentials.
-2. The Android connection service opens a server-streaming gRPC subscription.
-3. The terminal sender submits a notification request using gRPC.
-4. The server passes the notification to the active connection for the target device.
-5. The Android client receives the message and displays a system notification.
+## Interactive Server Shell
 
-The current implementation uses in-memory state. Notifications are not guaranteed to survive server restarts or to be delivered while a device is offline.
+After the server starts, an interactive prompt is available:
 
-## Educational Goals
+```text
+LanNotify server listening on 192.168.1.5:50051
 
-This project is intended to explore:
+lan-notify>
+```
 
-- C++ client-server application design.
-- gRPC service definitions and Protocol Buffers.
-- Unary and server-streaming RPCs.
-- Concurrent connection and message-queue management.
-- Kotlin coroutines and Android foreground services.
-- Cross-platform communication between C++ and Android.
-- Local-network application development.
+### Available commands
 
-## Limitations and Security
+| Command | Description |
+|---|---|
+| `help` | Display available commands. |
+| `devices` | List registered devices and their IDs and names. |
+| `send` | Send a notification to a registered device. |
+| `exit` | Shut down the server. |
+| `quit` | Shut down the server. |
 
-LanNotify is currently a prototype for learning and experimentation.
+### List registered devices
 
-- It is intended for a trusted LAN, not direct exposure to the public internet.
-- The current gRPC setup uses insecure channel credentials and does not provide transport encryption.
-- The prototype does not yet provide durable notification storage or reliable offline delivery.
-- In-memory registrations and queued notifications can be lost when the server stops.
-- Authentication, authorization, and credential management require further hardening.
+```text
+lan-notify> devices
+Registered Devices (1):
+  - ID: <DEVICE_ID> | Name: My Android Phone
+```
 
-Do not use this prototype to transmit sensitive information or expose it to untrusted networks.
+If no devices have registered, the shell reports that no devices are available.
+
+### Send a notification
+
+Enter `send` and follow the prompts:
+
+```text
+lan-notify> send
+Device ID: <DEVICE_ID>
+Title: Build completed
+Body: Your Android build completed successfully.
+
+[SUCCESS] Notification queued! Message ID: <MESSAGE_ID>
+```
+
+The shell sends the notification through the server's `sendNotificationDirect()` method. The target device must be registered and connected for the notification to be accepted.
+
+### Stop the server
+
+```text
+lan-notify> exit
+Shutting down server...
+```
+
+## Running the Android Client
+
+1. Open the `android/` project in Android Studio.
+2. Configure the server host to use the computer's LAN IP address and port `50051`.
+3. Build and install the application on an Android device connected to the same network.
+4. Register the device with the server.
+5. Keep the application connected to receive notifications.
+
+On Android 13 and later, grant the notification permission when prompted. Android's notification-channel settings also affect whether notifications appear as heads-up pop-ups.
+
+## Current Limitations
+
+- **LAN development only:** the server uses insecure gRPC credentials without TLS.
+- **In-memory state:** registered devices and active connections are not persisted across server restarts.
+- **No offline delivery:** notifications are not guaranteed to reach devices that are disconnected.
+- **No admin authentication:** anyone able to reach the server may attempt to send notifications.
+- **Android background restrictions:** Android may interrupt the connection depending on device settings and operating-system policies.
+
+Do not expose this server to the public internet or use it to deliver sensitive information without adding appropriate security, authentication, and persistence.
 
 ## Future Improvements
 
-- Persistent device registration and notification storage using SQLite.
-- Reliable delivery and message acknowledgements.
-- Notification replay after reconnection.
-- Improved authentication and secure transport using TLS.
-- Better connection lifecycle management and graceful shutdown.
-- Improved CLI experience and error reporting.
+- Add TLS and device authentication.
+- Persist device registrations and notifications.
+- Implement notification acknowledgements and offline delivery.
+- Add delivery status and reconnection handling.
+- Improve Android background reliability.
+
+## Purpose
+
+LanNotify is a hands-on project for learning C++, gRPC, Protocol Buffers, network communication, and Android development through a practical client-server application.
